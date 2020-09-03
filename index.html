@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inter-process messaging</title>
+</head>
+<body>
+    <script>
+        async function load_and_eval(script) {
+            const res = await fetch(script);
+            const string = await res.text();
+            return await eval(string);
+        }
+        async function main() {
+            const MessageBus = await load_and_eval("./message_bus.js");
+            window.addEventListener("message", ev => {
+                console.log(ev.data);
+            });
+            const stage = document.location.hash || 0;
+            switch (stage) {
+                case 0:
+                    window.open("#1", "_blank");
+                    break;
+                case 1:
+                    const frame = document.createElement("iframe");
+                    frame.src = "#2";
+                    document.body.append(frame);
+                default:
+                    const worker = new MessageBus.ProxiedWorker("worker.js", {name: "Test worker"});
+            }
+            MessageBus.sendToRoot(`My hash is ${stage}`);
+        }
+        main();
+    </script>
+</body>
+</html>
