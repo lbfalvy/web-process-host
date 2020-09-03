@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inter-process messaging</title>
+    <title>Send to root</title>
 </head>
 <body>
     <script>
@@ -13,7 +13,7 @@
             return await eval(string);
         }
         async function main() {
-            const MessageBus = await load_and_eval("./message_bus.js");
+            const MessageBus = await load_and_eval("./send_to_root.js");
             window.addEventListener("message", ev => {
                 console.log(ev.data);
             });
