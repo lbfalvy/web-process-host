@@ -1,9 +1,14 @@
-async function load_and_eval(script) {
-    const res = await fetch(script);
-    const string = await res.text();
-    return await eval(string);
-}
+importScripts("ipc.js")
 
-load_and_eval("./send_to_root.js").then( module => {
-    module.sendToRoot("beep, I'm a worker");
-});
+addEventListener('message', ev => console.log('Worker incoming', ev.data))
+async function main() 
+{
+    //const port = await getSubChannel(this);
+    const client = await getClient(this);
+    console.log('Worker got client')
+    await client.show(["http://example.com"]);
+    console.log("Yeee-");
+    console.log("-haw!", await client.w81sec());
+    console.log('Client', client);
+}
+main();
