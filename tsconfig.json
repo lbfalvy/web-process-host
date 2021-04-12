@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "alwaysStrict": true,
+        "experimentalDecorators": true,
+        "inlineSourceMap": true,
+        "lib": [
+            "es2019",
+            "ES2019.Array",
+            "DOM",
+            "DOM.Iterable",
+            "ScriptHost",
+            "WebWorker",
+            "WebWorker.ImportScripts"
+        ],
+        "module": "ES6",
+        "moduleResolution": "Node",
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "rootDir": "./src",
+        "skipLibCheck": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "target": "es6",
+        "declaration": true,
+        "declarationDir": "dist/decl"
+    },
+    "include": ["./src"],
+}
