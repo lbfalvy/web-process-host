@@ -1,5 +1,5 @@
 {
-  "name": "process-host",
+  "name": "@lbfalvy/process-host",
   "version": "1.0.0",
   "description": "A MessageChannel and Worker based low-trust multitasking system",
   "main": "dist/index.js",
