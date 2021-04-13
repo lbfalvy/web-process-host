@@ -9,6 +9,16 @@ export function show(frame: HTMLIFrameElement, url: string, message: any, transf
     });
 }
 
+export function favicon(url: string) {
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+    if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = url;
+}
+
 export const historyApi = {
     go: (delta: number): void => window.history.go(delta),
     history: (): number => window.history.length,

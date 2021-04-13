@@ -1,6 +1,6 @@
 {
   "name": "@lbfalvy/process-host",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A MessageChannel and Worker based low-trust multitasking system",
   "main": "dist/index.js",
   "types": "dist/decl/@lbfalvy/process-host.d.ts",

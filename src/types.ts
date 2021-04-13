@@ -61,6 +61,8 @@ export interface ProcessAPI {
     // Display
     show<T extends Transferable[]>(args: [string, any, T], transfer: T): Promise<void>
     show(args: [string, any] | [string]): Promise<void>
+    title(args: [string]): Promise<void>
+    favicon(args: [string]): Promise<void>
     // History
     go(args: [number]): Promise<void>
     history(): Promise<number>

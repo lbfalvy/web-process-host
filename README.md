@@ -1,3 +1,12 @@
+#### Process Host
+
+This is a library for low-trust multiprocessing on the frontend, but it also
+comes with a standard interface for services to access the frontend. Of course
+you are free to implement it partially or limit access, but following the
+standard will help encourage the making of general purpose services and
+ultimately lead towards a truly modular web. Below is a documentation for the
+API, for an example of how to implement it, see the code.
+
 ### Means of communication
 
 Local peers communicate through `MessageChannel`s. Since MessageChannel has no
@@ -39,7 +48,7 @@ or you expect it might want to name itself, create a new process with fork().
     with the parent.
   - exit(): void
     Remove this process from the process table, as well as all of its children,
-    and close their ports.
+    and close their ports. If they have a terminate() method, call it too.
 - Communicate
   - getpid(): pid
     Get our own PID. This serves to implement replies, although you should
@@ -63,3 +72,19 @@ or you expect it might want to name itself, create a new process with fork().
     it as ssoon as the contents of the iframe load. Do not use this unless you
     know that no other process is displaying anything, because it silently
     overrides the current location.
+  - title(title): void
+    Change the document title
+  - favicon(url): void
+    Change the displayed icon
+- Interact with the history API
+  - go(offset): void
+    Go back or forward in history
+  - history(): length
+    Detect the length of the history stack
+  - onPopState(port): void
+    Send any popstate events through the message port. You can close the
+    channel by sending anything through it.
+  - pushState(data, title, url): void
+    Push on the history stack
+  - replaceState(data, title, url): void
+    Replace the current history entry with a new one
