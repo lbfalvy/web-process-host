@@ -1,6 +1,7 @@
 const { resolve } = require("path");
 const { env } = require("process");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const DtsBundleWebpackPlugin = require('dts-bundle-webpack');
 
 const isProduction = env.NODE_ENV == 'production';
 module.exports = {
@@ -24,6 +25,11 @@ module.exports = {
             inject: 'body',
             chunks: ['main']
         }),
+        new DtsBundleWebpackPlugin({
+            name: '@lbfalvy/process-host',
+            main: 'dist/decl/index.d.ts',
+            removeSource: true,
+        })
     ],
     resolve: {
         extensions: ['.js', '.ts']
