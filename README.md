@@ -1,4 +1,4 @@
-##### Process Host
+# Process Host
 
 This is a library for low-trust multiprocessing on the frontend, but it also
 comes with a standard interface for services to access the frontend. Of course
@@ -7,7 +7,7 @@ standard will help encourage the making of general purpose services and
 ultimately lead towards a truly modular web. Below is a documentation for the
 API, for an example of how to implement it, see the code.
 
-#### Means of communication
+## Means of communication
 
 Local peers communicate through `MessageChannel`s. Since MessageChannel has no
 means to signal when it is closed, if your program wishes to react to the
@@ -43,7 +43,7 @@ for defining and controlling them, but you can rely on the methods provided to
 craft your own implementation. It is often beneficial to use the methods
 directly when you want to react to a property change for example.
 
-#### API functions
+## API functions
 
 Through a root MessagePort the following functions are available. Note that a
 root MessagePort identifies a process and plain subchannels have the same
