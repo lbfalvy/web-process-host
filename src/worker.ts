@@ -7,6 +7,11 @@ async function main(this: DedicatedWorkerGlobalScope)
     const port = getSubChannel(this);
     const client = await getClient<ProcessAPI>(port);
     console.log('Worker got client')
+    const initialTitle = await client.getTitle();
+    console.log('Old Title:', initialTitle);
+    await client.setTitle(['Title set by call']);
+    console.log('Title as set by call', client.Title);
+    client.Title = 'Updated title';
     await client.show(["http://example.com"]);
     console.log("Yeee-");
 }

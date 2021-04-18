@@ -1,4 +1,4 @@
-import { MessageTarget, Client } from "./types";
+import { MessageTarget, Client, Property } from "./types";
 
 
 export function postMessage(target: MessageTarget, message: any, transfer?: Transferable[]): void {
@@ -130,29 +130,30 @@ export async function getClient(port: MessageTarget, sync = false): Promise<Clie
         let propValue!: any;
         // Get a messagePort and call 'track' with the pair
         const { port1: foreignPort, port2: localPort } = new MessageChannel();
-        const trackPromise = track([foreignPort], [foreignPort]);
+        track([foreignPort], [foreignPort]);
         tryReportClosing(localPort);
         // Update the value if a message with a 'value' field comes
         localPort.onmessage = ({ data }) => {
-            if ('value' in data) propValue = data.value;
-            if ('error' in data) throw new Error(`Property error [${data.error}]`);
+            if ('value' in data) {
+                console.debug('[IPC] Received value of', prop, 'as', data.value)
+                propValue = data.value;
+            }
+            if ('error' in data) throw new Error(`[IPC] Property error [${data.error}]`);
         };
-        if (sync) await trackPromise;
-        else trackOps.push(trackPromise);
+        if (sync) await getOneMessage(localPort);
+        else trackOps.push(getOneMessage(localPort));
         // Setting never throws and affects the got value instantly
         // If a validation error occurs, the value will be reset
         Object.defineProperty(client, prop, {
             get: () => propValue,
             set: writable ? (v) => {
+                console.debug('[IPC] Sending property update', prop, 'to', v);
                 propValue = v;
                 localPort.postMessage({ value: v });
             } : undefined,
             configurable: true,
-            enumerable: true,
-            writable
+            enumerable: true
         });
-        if (sync) await trackPromise;
-        else trackOps.push(trackPromise);
     }
     if (!sync) await Promise.all(trackOps);
     return client;
@@ -253,17 +254,18 @@ export function makeServer(port: MessageTarget, table: Record<string, any>, sync
 }
 
 
-export function makeProperty<T>(
-    name: string | number,
+export function makeProperty<T, K extends string>(
+    name: K,
     initial?: T,
     validate_or_readonly?: ((t: T) => boolean) | false
-): Record<string | number, any> {
+): Property<K, T> {
     let value: T = initial!;
     const readonly = validate_or_readonly === false;
     const validate = validate_or_readonly === false ? undefined : validate_or_readonly
     // What to do when a new value is available
     function setValue(newValue: T, ignoreRdOnly = false) {
         if (readonly && !ignoreRdOnly || validate && !validate(newValue)) throw new Error();
+        console.debug('[IPC] Updating property', name, 'to', newValue);
         value = newValue;
         trackers.forEach(p => p.postMessage({ value }));
     }
@@ -271,7 +273,8 @@ export function makeProperty<T>(
     const trackers = new Set<MessagePort>();
     // Message handler for all trackers
     const handleMessage = (ev: MessageEvent<{ channel: 'close' } | { value: T }>) => {
-            const port = ev.source as MessagePort;
+        const port = ev.source as MessagePort;
+        console.debug('[IPC] Message through tracker', ev.data);
         // On { channel: "close" }, close the port and stop sending tracking updates
         if ('channel' in ev.data && ev.data.channel == 'close' ) {
             port.close();
@@ -288,6 +291,7 @@ export function makeProperty<T>(
         [`track${name}`]: (port: MessagePort) => {
             tryReportClosing(port);
             port.addEventListener('message', handleMessage);
+            port.start();
             trackers.add(port);
             port.postMessage({ value });
         },
@@ -306,5 +310,5 @@ export function makeProperty<T>(
             catch { throw new Error('Validation failed'); }
         }
     };
-    return ret;
+    return ret as Property<K, T>;
 }

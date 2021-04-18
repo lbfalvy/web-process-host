@@ -19,6 +19,12 @@ export function favicon(url: string) {
     link.href = url;
 }
 
+export function getFavicon(): string {
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null
+    if (!link) return '/favicon.ico';
+    return link.href;
+}
+
 export const historyApi = {
     go: (delta: number): void => window.history.go(delta),
     history: (): number => window.history.length,

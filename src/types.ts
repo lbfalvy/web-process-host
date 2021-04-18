@@ -23,6 +23,17 @@ export type MessageTarget = WindowLike | MessagePortLike;
 export type Call = (args?: any[], transfer?: Transferable[]) => Promise<any>;
 export type Client = Record<string | number, Call>
 
+export type Property<Name extends string, T> =
+    & Record<`get${Name}`, () => T>
+    & Record<`set${Name}`, (value: T) => void>
+    & Record<`track${Name}`, (port: MessagePort) => void>
+    & Record<Name, T>
+export type ClientProperty<Name extends string, T> =
+    & Record<`get${Name}`, () => Promise<T>>
+    & Record<`set${Name}`, (args: [T]) => Promise<void>>
+    & Record<`track${Name}`, (args: [MessagePort]) => Promise<void>>
+    & Record<Name, T>
+
 export interface Process {
     port: MessagePort | Worker,
     parent?: number,
@@ -44,7 +55,7 @@ export interface ProcessHost {
     parent(pid: number): number | undefined
 }
 
-export interface ProcessAPI {
+export interface ProcessAPI extends ClientProperty<'Title', string> {
     // ProcessHost
     start(args: [string]): Promise<number>
     fork(args: [MessagePort], transfer: [MessagePort]): Promise<number>
@@ -59,7 +70,6 @@ export interface ProcessAPI {
     // Display
     show<T extends Transferable[]>(args: [string, any, T], transfer: T): Promise<void>
     show(args: [string, any] | [string]): Promise<void>
-    title(args: [string]): Promise<void>
     favicon(args: [string]): Promise<void>
     // History
     go(args: [number]): Promise<void>
