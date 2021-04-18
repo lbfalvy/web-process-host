@@ -1,6 +1,6 @@
 {
   "name": "@lbfalvy/process-host",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A MessageChannel and Worker based low-trust multitasking system",
   "main": "dist/index.js",
   "types": "dist/decl/@lbfalvy/process-host.d.ts",
@@ -28,14 +28,12 @@
     "@babel/core": "^7.13.15",
     "babel": "^6.23.0",
     "babel-loader": "^8.2.2",
+    "dts-bundle-webpack": "^1.0.2",
     "html-webpack-plugin": "^5.3.1",
     "ts-loader": "^8.1.0",
     "typescript": "^4.2.4",
     "webpack": "^5.31.2",
     "webpack-cli": "^4.6.0",
     "webpack-dev-server": "^3.11.2"
-  },
-  "dependencies": {
-    "dts-bundle-webpack": "^1.0.2"
   }
 }
