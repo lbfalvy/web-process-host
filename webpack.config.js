@@ -25,11 +25,11 @@ module.exports = {
             inject: 'body',
             chunks: ['main']
         }),
-        new DtsBundleWebpackPlugin({
+        ...isProduction ? [new DtsBundleWebpackPlugin({
             name: '@lbfalvy/process-host',
             main: 'dist/decl/index.d.ts',
             removeSource: true,
-        })
+        })] : []
     ],
     resolve: {
         extensions: ['.js', '.ts']
