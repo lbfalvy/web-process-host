@@ -1,12 +1,12 @@
 import { makeServer } from "./ipc";
-import { Process, ProcessHost, Server } from "./types";
+import { Process, ProcessHost } from "./types";
 
 /**
  * Create a process host.
  */
 export function processHost(
     getPort: (url: string) => MessagePort | Worker,
-    hostApiCallback: (pid: number) => Server
+    hostApiCallback: (pid: number) => Record<string, any>
 ): ProcessHost {
     let idCounter = 0;
 

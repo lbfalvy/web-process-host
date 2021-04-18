@@ -12,6 +12,7 @@ export interface MessagePortLike extends MessageEventTarget {
     postMessage(message: any, transfer: Transferable[]): void
     postMessage(message: any): void
     start?: () => void
+    close?: () => void
 }
 export interface WindowLike extends MessageEventTarget {
     postMessage(message: any, origin: string, tranfer?: Transferable[]): void
@@ -21,9 +22,6 @@ export type MessageTarget = WindowLike | MessagePortLike;
 
 export type Call = (args?: any[], transfer?: Transferable[]) => Promise<any>;
 export type Client = Record<string | number, Call>
-
-export type Callback = (...args: any[]) => any | Promise<any>
-export type Server = Record<string | number, Callback>
 
 export interface Process {
     port: MessagePort | Worker,
