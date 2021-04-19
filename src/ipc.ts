@@ -302,14 +302,14 @@ export function makeProperty<T, K extends string>(
         ...readonly ? {} : { [`set${name}`]: (v: T) => {
             try { setValue(v); }
             catch { throw 'not set'; }
-        } },
-        // Get the value locally
-        get [name](): T { return value as T },
-        // Set the value locally, with validation but ignoring readonly
-        set [name](v: T) {
+        } }
+    };
+    Object.defineProperty(ret, name, {
+        get: () => value,
+        set: (v: T) => {
             try { setValue(v, true); }
             catch { throw new Error('Validation failed'); }
         }
-    };
+    })
     return ret as Property<K, T>;
 }
