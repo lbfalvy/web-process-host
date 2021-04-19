@@ -10,4 +10,4 @@ export {
     getClient, makeServer, makeProperty
 } from './ipc'
 export { sendToRoot } from './send_to_root'
-export { historyApi, show, favicon } from './utils'
+export { historyApi, show, favicon, getFavicon } from './utils'
