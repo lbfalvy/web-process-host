@@ -85,6 +85,7 @@ export async function asyncIpc(
     transfer?: Transferable[]
 ): Promise<any> {
     const subport = getSubChannel(port);
+    subport.start();
     try {
         const result = await ipc(subport, call, args, transfer);
         return result;
@@ -122,7 +123,6 @@ export async function getClient(port: MessageTarget, sync = false): Promise<Clie
         .filter(prop => funcs.includes(`get${prop}`))
     for (const prop of propNames) {
         // Retrieve basic functions
-        const get = client[`get${prop}`]!;
         const track = client[`track${prop}`]!;
         // Only check for presence of setter
         const writable = `set${prop}` in client;
@@ -154,6 +154,7 @@ export async function getClient(port: MessageTarget, sync = false): Promise<Clie
             configurable: true,
             enumerable: true
         });
+        localPort.start();
     }
     if (!sync) await Promise.all(trackOps);
     return client;
@@ -201,7 +202,7 @@ export function handleAsyncIpc<T extends any[]>(
         // the message content looks like a MessagePort.
         // make sure we don't crash to be safe.
         if (isMessageTarget(ev.data)) try {
-            tryReportClosing(ev.data)
+            tryReportClosing(ev.data);
             // call ourselves on it
             const subCancel = handleAsyncIpc(ev.data, name, callback);
             // Update function cancel to do everything it did until now
