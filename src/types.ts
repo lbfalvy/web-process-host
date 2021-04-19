@@ -31,7 +31,7 @@ export type Property<Name extends string, T> =
 export type ClientProperty<Name extends string, T> =
     & Record<`get${Name}`, () => Promise<T>>
     & Record<`set${Name}`, (args: [T]) => Promise<void>>
-    & Record<`track${Name}`, (args: [MessagePort]) => Promise<void>>
+    & Record<`track${Name}`, (args: [MessagePort], transfer: [MessagePort]) => Promise<void>>
     & Record<Name, T>
 
 export interface Process {
