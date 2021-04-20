@@ -48,37 +48,38 @@ directly when you want to react to a property change for example.
 Through a root MessagePort the following functions are available. Note that a
 root MessagePort identifies a process and plain subchannels have the same
 identity as the original. If you do not entirely trust the code you're running
-or you expect it might want to name itself, create a new process with fork().
+or you expect it might want to name itself, create a new process with start().
 
 - Lifetime
-  - start(url): pid
-    The parent can now message the child using the pid. If they want secure
-    communication, the parent can include some kind of token in the URL hash.
-  - fork(MessagePort): void
-    Treat the MessagePort as a new process that has its own pid. The fork will
-    be automatically terminated when the parent terminates unless separate() is
-    called
-  - separate(): void
-    Split from the parent process, such that this process isn't terminated
-    with the parent.
-  - exit(): void
-    Remove this process from the process table, as well as all of its children,
+  - start(MessagePort|url): pid
+    If the arguemt is an URL, start a new worker with it. If it's a
+    MessagePort, register it as a new process.
+  - exit(pid=self): void
+    Remove the process from the process table, as well as all of its children,
     and close their ports. If they have a terminate() method, call it too.
+    Only works on self and descendants
+- Tree
+  - reparent(pid, parent): void
+    Change the parent of a given process. Only works on descendants.
+  - children(pid=self): pid[]
+    Returns the PIDs of all children. Only works on self and descendants.
+  - parent(pid=self): pid
+    Returns the PID of the parent process. Only works on self and descendants.
 - Communicate
   - getpid(): pid
     Get our own PID. This serves to implement replies, although you should
     probably post a MessagePort instead.
   - send(pid, message, transfer): void
-    Post a message to the given process. For workers this posts the data to the
-    worker, firing `WorkerGlobalScope`'s `message` event. For everything
-    represented by a channel, it posts to the channel.
+    Post a message to the given process. For workers this posts the tuple
+    `[sender, data]` to the worker, firing `WorkerGlobalScope`'s `message`
+    event. For everything represented by a channel, it posts to the channel.
 - Manage visibility
-  - name(name?): success
-    If the given name is available, assigns this process to it so that other
-    processes can find it. If `name` is undefined, removes the process' name.
+  - name(options[]): final|false
+    If any of the given options is available, assigns this process to the first
+    so that other processes can find it.
 - Query processes
-  - find(name): pid | -1
-    Find the process with the given name. If none is found, -1 is returned.
+  - find(names[]): [name, pid] | false
+    Find the process with the given name. If none is found, false is returned.
   - wait(name): pid
     Wait for a process to take the given name, then return its pid.
 - Set the current view

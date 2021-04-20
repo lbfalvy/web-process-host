@@ -35,17 +35,33 @@ export function processHost(
         return makeServer(proc.port, Object.assign(
             {
                 // Lifetime
-                start,
-                fork: (port: MessagePort) => fork(port, pid),
-                separate: () => separate(pid),
-                exit: () => exit(pid),
+                start: (child: string | MessagePort) => start(child, pid),
+                exit: (process = pid) => {
+                    if (!isInSubtree(process, pid)) throw new Error('Not descendant');
+                    exit(pid)
+                },
+                // Tree
+                children: (process = pid) => {
+                    if (!isInSubtree(process, pid)) throw new Error('Not descendant');
+                    return [...children(process)]
+                },
+                parent: (process = pid) => {
+                    if (!isInSubtree(process, pid)) throw new Error('Not descendant');
+                    return parent(process);
+                },
+                reparent: (process: number, target = pid) => {
+                    if (!isInSubtree(process, pid)) throw new Error('Not descendant');
+                    if (isInSubtree(target, process)) throw new Error('Topology violation');
+                    return reparent(process, target);
+                },
                 // Communicate
                 getPid: () => pid,
-                send: (pid: number, data: any, transfer: Transferable[]) => send(pid, data, transfer),
+                send: (target: number, data: any, transfer: Transferable[]) => 
+                    send(target, [pid, data], transfer),
                 // Manage visibility
-                name: (n: string) => name(pid, n),
+                name: (options: string[]) => name(pid, options),
                 // Query processes
-                find: (name: string) => find(name),
+                find: (options: string[]) => find(options),
                 wait: (name: string) => wait(name)
             },
             hostApiCallback(pid)
@@ -53,46 +69,21 @@ export function processHost(
     };
 
     /**
-     * Starts a new process from URL
+     * If port or worker, accept it as a child process of the parent.
+     * If string, start a new worker as a child process.
      */
-    const start = (url: string): number => {
+    const start = (child: MessagePort | Worker | string, parent?: number): number => {
+        const parentObj = parent ? table.get(parent) : undefined;
+        if (parent && !parentObj) throw new Error('Process not found');
+        if (typeof child == 'string') child = getPort(child);
         const pid = getPID();
-        const port = getPort(url);
         const process: Process = {
-            port, children: new Set()
+            port: child, parent, children: new Set()
         };
         table.set(pid, process);
         process.disableApi = buildAPI(pid);
+        if (parentObj) parentObj.children.add(pid);
         return pid;
-    };
-
-    /**
-     * Accept the port as a child process of the parent.
-     */
-    const fork = (port: MessagePort, parent: number): number => {
-        const parentObj = table.get(parent);
-        if (!parentObj) throw new Error('Process not found');
-        const pid = getPID();
-        const process: Process = {
-            port, parent, children: new Set()
-        };
-        table.set(pid, process);
-        process.disableApi = buildAPI(pid);
-        parentObj.children.add(pid);
-        return pid;
-    };
-
-    /**
-     * Separate the process from its parent.
-     */
-    const separate = (pid: number): void => {
-        const proc = table.get(pid);
-        if (!proc) throw new Error('Process not found');
-        if (!proc.parent) throw new Error('Process has no parent');
-        const parent = table.get(proc.parent);
-        if (!parent) throw new Error('Process has no parent');
-        delete proc.parent;
-        parent.children.delete(pid);
     };
 
     /**
@@ -134,24 +125,34 @@ export function processHost(
     /**
      * Set the name for the given process
      */
-    const name = (pid: number, name: string): boolean => {
+    const name = (pid: number, options: string[]): string | false => {
         const proc = table.get(pid);
         if (!proc) throw new Error('Process not found');
-        if (names.has(name)) return false;
-        if (proc.name) names.delete(proc.name);
-        if (name) {
-            names.set(name, pid);
-            const callbacks = nameCallbacks.get(name);
-            if (callbacks) for (const cb of callbacks) cb(pid);
+        if (proc.name) {
+            names.delete(proc.name);
+            proc.name = undefined;
         }
-        return true;
+        for (const name of options) {
+            if (!names.has(name)) {
+                names.set(name, pid);
+                proc.name = name;
+                const callbacks = nameCallbacks.get(name);
+                if (callbacks) for (const cb of callbacks) cb(pid);
+                return name;
+            }
+        }
+        return false;
     };
 
     /**
      * Find the process identified by a given name, or -1 if there isn't one.
      */
-    const find = (name: string): number => {
-        return names.get(name) ?? -1;
+    const find = (options: string[]): [string, number] | false => {
+        if (!options.length) return false;
+        const result = names.get(options[0])
+        if (result !== undefined) return [options[0], result];
+        // If JS will ever get TCO this will be fast.
+        return find(options.slice(1));
     };
 
     /**
@@ -166,12 +167,18 @@ export function processHost(
         });
     };
 
-    // =================== Tree navigation =================
+    // =================== Tree =================
 
     /**
      * Return the children of a given process
      */
-    const children = (pid: number): Set<number> => {
+    const children = (pid?: number | undefined): Set<number> => {
+        // If PID is undefined, get all top-level processes
+        if (pid === undefined) return new Set(
+            [...table]
+            .filter(([_, proc]) => proc.parent === undefined)
+            .map(([id]) => id)
+        );
         const proc = table.get(pid);
         if (!proc) throw new Error('Process not found');
         return proc.children;
@@ -186,16 +193,48 @@ export function processHost(
         return proc.parent;
     }
 
+    /**
+     * Decides whether pid is a descendant of parent
+     */
+    const isInSubtree = (pid: number | undefined, root: number): boolean => {
+        while (typeof pid == 'number') {
+            const proc = table.get(pid);
+            if (!proc) throw new Error('Process not found');
+            if (pid == root) return true;
+            pid = proc.parent;
+        }
+        return false;
+    }
+
+    const reparent = (pid: number, parent?: number): void => {
+        const proc = table.get(pid);
+        if (!proc || parent !== undefined && !table.has(parent)) {
+            throw new Error('Process not found');
+        }
+        if (proc.parent) {
+            const old = table.get(proc.parent);
+            if (!old) throw new Error('BUG');
+            old.children.delete(pid);
+            proc.parent = undefined;
+        }
+        if (parent) {
+            const target = table.get(parent);
+            target?.children.add(pid);
+            proc.parent = parent;
+        }
+    }
+
     return {
         // ==== API ====
         // Lifetimes
-        start, fork, separate, exit,
+        start, exit,
+        // Tree
+        reparent, children, parent,
         // Communicate
         send,
         // Visibility
         name, find, wait,
-        // ==== Management ====
-        // Tree
-        children, parent
+        // ======= Manage ===========
+        isInSubtree
     };
 }

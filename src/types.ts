@@ -43,34 +43,34 @@ export interface Process {
 }
 
 export interface ProcessHost {
-    start(url: string): number
-    fork(port: MessagePort, parent: number): number
-    separate(pid: number): void
+    start(child: string | MessagePort, parent?: number): number
     exit(pid: number): void
     send(target: number, data: any, transfer: Transferable[]): void
-    name(pid: number, name: string): boolean
-    find(name: string): number
+    name(pid: number, options: string[]): string | false
+    find(options: string[]): [string, number] | false
     wait(name: string): number | Promise<number>
-    children(pid: number): Set<number>
+    reparent(pid: number, parent?: number): void
+    children(pid?: number | undefined): Set<number>
     parent(pid: number): number | undefined
+    isInSubtree(pid: number, root: number): boolean
 }
 
-export interface ProcessAPI extends ClientProperty<'Title', string> {
+export interface ProcessAPI extends 
+    ClientProperty<'Title', string>,
+    ClientProperty<'Favicon', string> {
     // ProcessHost
     start(args: [string]): Promise<number>
-    fork(args: [MessagePort], transfer: [MessagePort]): Promise<number>
-    separate(): Promise<void>
+    start(args: [MessagePort], transfer: [MessagePort]): Promise<number>
     exit(): Promise<void>
     getPid(): Promise<number>
     send<T extends Transferable[]>(args: [number, any, T], transfer: T): Promise<void>
     send(args: [number, any]): Promise<void>
-    name(args: [string]): Promise<boolean>
-    find(args: [string]): Promise<number>
+    name(args: [string[]]): Promise<string | false>
+    find(args: [string[]]): Promise<[string, number] | false>
     wait(args: [string]): Promise<number>
     // Display
     show<T extends Transferable[]>(args: [string, any, T], transfer: T): Promise<void>
     show(args: [string, any] | [string]): Promise<void>
-    favicon(args: [string]): Promise<void>
     // History
     go(args: [number]): Promise<void>
     history(): Promise<number>
