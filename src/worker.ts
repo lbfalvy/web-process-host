@@ -10,8 +10,7 @@ async function main(this: DedicatedWorkerGlobalScope)
     const initialTitle = await client.getTitle();
     console.log('Old Title:', initialTitle);
     await client.setTitle(['Title set by call']);
-    console.log('Title as set by call', client.Title);
-    client.Title = 'Updated title';
+    console.log('Should say "Title set by call":', client.Title);
     await client.show(["http://example.com"]);
     console.log("Yeee-");
 }

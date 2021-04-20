@@ -1,3 +1,5 @@
+import { Contravariant } from "./types";
+
 /**
  * Open the specified url in the specified frame, and post it the message and
  * transfer as soon as it loads
@@ -41,4 +43,11 @@ export const historyApi = {
     },
     pushState: (data: any, title: string, url: string): void => history.pushState(data, title, url),
     replaceState: (data: any, title: string, url: string): void => history.replaceState(data, title, url)
+}
+
+export function extend<T, V extends any[]>(obj: T, ...mixins: V): T & Contravariant<V[number]> {
+    return mixins.reduce((draft, mixin) => Object.defineProperties(
+        draft,
+        Object.getOwnPropertyDescriptors(mixin)
+    ), obj);
 }

@@ -115,17 +115,14 @@ export async function getClient(port: MessageTarget, sync = false): Promise<Clie
     const trackOps: Promise<any>[] = [];
     // Handle properties
     // A property is defined as any <Name> for which the server provides
-    // trackName(MessagePort) and getName(). If setName() is defined, the property
-    // is assumed to be writable.
+    // trackName(MessagePort) and getName() but doesn't provide Name()
     const propNames = funcs
         .filter(f => f.toString().startsWith('track') && f.toString().length > 'track'.length)
         .map(f => f.toString().substr('track'.length))
-        .filter(prop => funcs.includes(`get${prop}`))
+        .filter(prop => funcs.includes(`get${prop}`) && !funcs.includes(prop))
     for (const prop of propNames) {
-        // Retrieve basic functions
+        // We don't use 'get' here beyond ensuring that
         const track = client[`track${prop}`]!;
-        // Only check for presence of setter
-        const writable = `set${prop}` in client;
         // Initialise
         let propValue!: any;
         // Get a messagePort and call 'track' with the pair
@@ -142,15 +139,8 @@ export async function getClient(port: MessageTarget, sync = false): Promise<Clie
         };
         if (sync) await getOneMessage(localPort);
         else trackOps.push(getOneMessage(localPort));
-        // Setting never throws and affects the got value instantly
-        // If a validation error occurs, the value will be reset
         Object.defineProperty(client, prop, {
             get: () => propValue,
-            set: writable ? (v) => {
-                console.debug('[IPC] Sending property update', prop, 'to', v);
-                propValue = v;
-                localPort.postMessage({ value: v });
-            } : undefined,
             configurable: true,
             enumerable: true
         });
@@ -257,35 +247,20 @@ export function makeServer(port: MessageTarget, table: Record<string, any>, sync
 
 export function makeProperty<T, K extends string>(
     name: K,
-    initial?: T,
-    validate_or_readonly?: ((t: T) => boolean) | false
+    initial: T
 ): Property<K, T> {
-    let value: T = initial!;
-    const readonly = validate_or_readonly === false;
-    const validate = validate_or_readonly === false ? undefined : validate_or_readonly
-    // What to do when a new value is available
-    function setValue(newValue: T, ignoreRdOnly = false) {
-        if (readonly && !ignoreRdOnly || validate && !validate(newValue)) throw new Error();
-        console.debug('[IPC] Updating property', name, 'to', newValue);
-        value = newValue;
-        trackers.forEach(p => p.postMessage({ value }));
-    }
+    let value: T = initial;
     // All the channels to notify when the value changes
     const trackers = new Set<MessagePort>();
     // Message handler for all trackers
-    const handleMessage = (ev: MessageEvent<{ channel: 'close' } | { value: T }>) => {
+    const handleMessage = (ev: MessageEvent) => {
         const port = ev.source as MessagePort;
-        console.debug('[IPC] Message through tracker', ev.data);
+        console.debug('[IPC] Closing tracker');
         // On { channel: "close" }, close the port and stop sending tracking updates
         if ('channel' in ev.data && ev.data.channel == 'close' ) {
             port.close();
             trackers.delete(port);
-        }
-        // If the message has a new value
-        if ('value' in ev.data) {
-            try { setValue(ev.data.value); }
-            catch { port.postMessage({ error: 'not set', value }); }
-        }
+        } else throw new Error('Unrecognized message');
     }
     const ret = {
         // Register a new port for realtime tracking and setting
@@ -298,18 +273,15 @@ export function makeProperty<T, K extends string>(
         },
         // Get the value
         [`get${name}`]: (): T => value as T,
-        // Set the value (unavailable if readonly)
-        ...readonly ? {} : { [`set${name}`]: (v: T) => {
-            try { setValue(v); }
-            catch { throw 'not set'; }
-        } }
     };
     Object.defineProperty(ret, name, {
         get: () => value,
         set: (v: T) => {
-            try { setValue(v, true); }
-            catch { throw new Error('Validation failed'); }
-        }
+            console.debug('[IPC] Updating property', name, 'to', v);
+            value = v;
+            trackers.forEach(p => p.postMessage({ value }));
+        },
+        configurable: true
     })
     return ret as Property<K, T>;
 }

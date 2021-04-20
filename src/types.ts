@@ -1,3 +1,7 @@
+export type Contravariant<T> = 
+  (T extends any ? (x: T) => any : never) extends 
+  (x: infer R) => any ? R : never
+
 export interface SendToRoot {
     sendToRoot(message: any, transfer: Transferable[]): void
     ProxiedWorker: typeof Worker
@@ -25,14 +29,12 @@ export type Client = Record<string | number, Call>
 
 export type Property<Name extends string, T> =
     & Record<`get${Name}`, () => T>
-    & Record<`set${Name}`, (value: T) => void>
     & Record<`track${Name}`, (port: MessagePort) => void>
     & Record<Name, T>
 export type ClientProperty<Name extends string, T> =
     & Record<`get${Name}`, () => Promise<T>>
-    & Record<`set${Name}`, (args: [T]) => Promise<void>>
     & Record<`track${Name}`, (args: [MessagePort], transfer: [MessagePort]) => Promise<void>>
-    & Record<Name, T>
+    & { readonly [n in Name]: T }
 
 export interface Process {
     port: MessagePort | Worker,
@@ -71,6 +73,8 @@ export interface ProcessAPI extends
     // Display
     show<T extends Transferable[]>(args: [string, any, T], transfer: T): Promise<void>
     show(args: [string, any] | [string]): Promise<void>
+    setTitle(args: [string]): Promise<void>
+    setFavicon(args: [string]): Promise<void>
     // History
     go(args: [number]): Promise<void>
     history(): Promise<number>

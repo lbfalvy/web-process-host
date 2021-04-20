@@ -33,10 +33,10 @@ process is up to the components involved.
 A property with respect to a server is defined as any string Name for which
 
 - getName(): any
-- setName(any): void
 - trackName(MessagePort): void  
   Messages travelling through MessagePort can have a "value" and an "error"
   property or possibly `{ channel: "close" }`.
+- Name() is not defined
 
 They are used for representing changing values, this library provides helpers
 for defining and controlling them, but you can rely on the methods provided to
@@ -90,8 +90,12 @@ or you expect it might want to name itself, create a new process with start().
     overrides the current location.
   - Property Title: string
     The document title
+  - setTitle(string): void
+    Update document title
   - Property Favicon: string
     The document icon
+  - setFavicon(string): void
+    Update document icon
 - Interact with the history API
   - go(offset): void
     Go back or forward in history
