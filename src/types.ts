@@ -47,7 +47,7 @@ export interface Process {
 export interface ProcessHost {
     start(child: string | MessagePort, parent?: number): number
     exit(pid: number): void
-    send(target: number, data: any, transfer: Transferable[]): void
+    send(target: number, data: any, transfer?: Transferable[]): void
     name(pid: number, options: string[]): string | false
     find(options: string[]): [string, number] | false
     wait(name: string): number | Promise<number>
@@ -65,13 +65,12 @@ export interface ProcessAPI extends
     start(args: [MessagePort], transfer: [MessagePort]): Promise<number>
     exit(): Promise<void>
     getPid(): Promise<number>
-    send<T extends Transferable[]>(args: [number, any, T], transfer: T): Promise<void>
-    send(args: [number, any]): Promise<void>
+    send(args: [number, any], transfer?: Transferable[]): Promise<void>
     name(args: [string[]]): Promise<string | false>
     find(args: [string[]]): Promise<[string, number] | false>
     wait(args: [string]): Promise<number>
     // Display
-    show<T extends Transferable[]>(args: [string, any, T], transfer: T): Promise<void>
+    show(args: [string, any], transfer: Transferable[]): Promise<void>
     show(args: [string, any] | [string]): Promise<void>
     setTitle(args: [string]): Promise<void>
     setFavicon(args: [string]): Promise<void>

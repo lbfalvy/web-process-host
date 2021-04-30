@@ -165,7 +165,14 @@ export function handleIpc<T extends any[]>(
         const args = ev.data.args ?? [];
         try {
             console.debug('[IPC] Calling IPC handler', name, ...args);
-            const result = await callback(...args);
+            // Set transfer for querying
+            transfer = ev.data.transfer as Transferable[];
+            // Call handler
+            const promise = callback(...args);
+            // Reset transfer
+            transfer = undefined;
+            // Wait for the function to return
+            const result = await promise;
             console.debug('[IPC] Call to IPC handler', name, 'returned', result);
             postMessage(port, { result });
         } catch(error) {
@@ -174,6 +181,18 @@ export function handleIpc<T extends any[]>(
     };
     port.addEventListener('message', handler);
     return () => port.removeEventListener('message', handler);
+}
+
+var transfer: Transferable[] | undefined = undefined;
+export function getTransfer(): Transferable[] {
+    if (transfer instanceof Array) return transfer;
+    console.error(
+        'getTransfer was called outside an IPC handler.\n'
+        + 'If you use asynchronous handlers, make sure that you only call getTransfer '
+        + 'before any "await" keywords, as the value is reset after a synchronous call '
+        + 'to prevent ambiguity.'
+    );
+    return [];
 }
 
 /**

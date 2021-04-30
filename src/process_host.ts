@@ -1,4 +1,4 @@
-import { makeServer } from "./ipc";
+import { getTransfer, makeServer } from "./ipc";
 import { Process, ProcessHost } from "./types";
 
 /**
@@ -56,8 +56,8 @@ export function processHost(
                 },
                 // Communicate
                 getPid: () => pid,
-                send: (target: number, data: any, transfer: Transferable[]) => 
-                    send(target, [pid, data], transfer),
+                send: (target: number, data: any) => 
+                    send(target, [pid, data], getTransfer()),
                 // Manage visibility
                 name: (options: string[]) => name(pid, options),
                 // Query processes
@@ -111,7 +111,7 @@ export function processHost(
     /**
      * Send a message to the process.
      */
-    const send = (pid: number, data: any, transfer: Transferable[]) => {
+    const send = (pid: number, data: any, transfer: Transferable[] = []) => {
         const proc = table.get(pid);
         if (!proc) throw new Error('Process not found');
         proc.port.postMessage(data, transfer);

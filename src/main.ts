@@ -1,4 +1,4 @@
-import { makeProperty } from "./ipc";
+import { getTransfer, makeProperty } from "./ipc";
 import { processHost } from "./process_host";
 import { extend, favicon, getFavicon, historyApi, show } from "./utils";
 
@@ -11,8 +11,8 @@ const host = processHost(
         const api = extend(
             {
                 // Display
-                show: (url: string, message: any, transfer: Transferable[]) => {
-                    show(frame, url, message, transfer);
+                show: (url: string, message: any) => {
+                    show(frame, url, message, getTransfer());
                 },
                 setTitle: (title: string) => {
                     document.title = title;
